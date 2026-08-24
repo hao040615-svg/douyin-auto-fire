@@ -33,9 +33,9 @@ jobs:
           python-version: "3.11"
       - run: pip install -r requirements.txt
       - run: python -m playwright install --with-deps chromium
-      - name: Use main config
+      - name: Write configuration from secret
         shell: bash
-        run: echo "Using main config with all friends"
+        run: printf '%s' "$DOUYIN_CONFIG" > config.json
       - name: Run sender
         shell: bash
         run: |
