@@ -1,4 +1,4 @@
-name: Send Douyin Messages (Batch Mode)
+﻿name: Send Douyin Messages (Batch Mode)
 
 on:
   workflow_dispatch:
@@ -8,18 +8,17 @@ on:
         type: boolean
         default: false
   schedule:
-    # 每天凌晨0点执行第一批
-    - cron: "0 0 * * *"
+    # 早上7点执行第一批
+    - cron: "0 7 * * *"
       timezone: "Asia/Shanghai"
-    # 凌晨0点5分执行第二批
-    - cron: "5 0 * * *"
+    # 早上7点5分执行第二批
+    - cron: "5 7 * * *"
       timezone: "Asia/Shanghai"
-    # 凌晨0点10分执行第三批
-    - cron: "10 0 * * *"
+    # 早上7点10分执行第三批
+    - cron: "10 7 * * *"
       timezone: "Asia/Shanghai"
 
 concurrency:
-  # 所有批次共享同一并发组，确保串行执行
   group: send-douyin-batches
   cancel-in-progress: false
 
