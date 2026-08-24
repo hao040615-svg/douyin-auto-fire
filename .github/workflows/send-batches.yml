@@ -20,7 +20,7 @@ on:
 
 concurrency:
   # 不同批次使用不同的并发组，互不干扰
-  group: ${{ github.workflow }}-batch-${{ job })
+  group: ${{ github.workflow }}-batch-${{ job.id }}
   cancel-in-progress: false
 
 jobs:
