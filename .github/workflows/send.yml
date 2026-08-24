@@ -35,9 +35,7 @@ jobs:
       - run: python -m playwright install --with-deps chromium
       - name: Use main config
         shell: bash
-        run: |
-          cp config.json config.json.bak || true
-          cp config/batches/batch1.json config.json
+        run: echo "Using main config with all friends"
       - name: Run sender
         shell: bash
         run: |
