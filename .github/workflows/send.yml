@@ -33,9 +33,6 @@ jobs:
           python-version: "3.11"
       - run: pip install -r requirements.txt
       - run: python -m playwright install --with-deps chromium
-      - name: Write configuration from secret
-        shell: bash
-        run: printf '%s' "$DOUYIN_CONFIG" > config.json
       - name: Run sender
         shell: bash
         run: |
