@@ -91,11 +91,14 @@ jobs:
       - name: Write batch config
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            printf '%s' "$DOUYIN_CONFIG" > config.json
-          else
+          if [ "${BATCH_ID}" = "1" ]; then
+            cp config/batches/batch1.json config.json
+          elif [ "${BATCH_ID}" = "2" ]; then
             cp config/batches/batch2.json config.json
+          else
+            cp config/batches/batch3.json config.json
           fi
+          echo "Using batch $BATCH_ID config"
       - name: Run batch 2
         shell: bash
         run: |
@@ -134,11 +137,14 @@ jobs:
       - name: Write batch config
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            printf '%s' "$DOUYIN_CONFIG" > config.json
+          if [ "${BATCH_ID}" = "1" ]; then
+            cp config/batches/batch1.json config.json
+          elif [ "${BATCH_ID}" = "2" ]; then
+            cp config/batches/batch2.json config.json
           else
             cp config/batches/batch3.json config.json
           fi
+          echo "Using batch $BATCH_ID config"
       - name: Run batch 3
         shell: bash
         run: |
