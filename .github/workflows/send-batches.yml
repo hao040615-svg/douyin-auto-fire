@@ -45,15 +45,14 @@ jobs:
       - name: Write batch config
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "$DOUYIN_CONFIG" ]; then
-            printf '%s' "$DOUYIN_CONFIG" > config.json
-          elif [ "${BATCH_ID}" = "1" ]; then
+          if [ "${BATCH_ID}" = "1" ]; then
             cp config/batches/batch1.json config.json
           elif [ "${BATCH_ID}" = "2" ]; then
             cp config/batches/batch2.json config.json
           else
             cp config/batches/batch3.json config.json
           fi
+          echo "Using batch $BATCH_ID config"
       - name: Run batch 1
         shell: bash
         run: |
