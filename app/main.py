@@ -101,6 +101,12 @@ async def run(dry_run: bool = False, env_file: str | None = None) -> int:
                             except Exception:
                                 LOGGER.exception("保存 trace 失败")
                         results.append(TargetResult(target=target.name, status="failed", sent=sent, error=str(exc), target_alias=alias))
+                        if task.continue_on_error:
+                            # 遇到风控/认证错误时，延长等待时间让抖音的拦截阈值重置
+                            wait_seconds = random.uniform(30, 60)
+                            LOGGER.warning("继续处理下一个好友（continue_on_error=true），等待 %.0f 秒后重试...", wait_seconds)
+                            await asyncio.sleep(wait_seconds)
+                            continue
                         fatal_error = exc
                         break
                     except Exception as exc:
