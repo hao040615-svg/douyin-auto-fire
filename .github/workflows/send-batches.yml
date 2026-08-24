@@ -1,0 +1,158 @@
+name: Send Douyin Messages (Batch Mode)
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Only verify login and friends without sending
+        type: boolean
+        default: false
+  schedule:
+    # 每天凌晨0点执行第一批
+    - cron: "0 0 * * *"
+      timezone: "Asia/Shanghai"
+    # 凌晨0点5分执行第二批
+    - cron: "5 0 * * *"
+      timezone: "Asia/Shanghai"
+    # 凌晨0点10分执行第三批
+    - cron: "10 0 * * *"
+      timezone: "Asia/Shanghai"
+
+concurrency:
+  # 不同批次使用不同的并发组，互不干扰
+  group: ${{ github.workflow }}-batch-${{ matrix.batch }}
+  cancel-in-progress: false
+
+jobs:
+  send-batch1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      DOUYIN_COOKIE: ${{ secrets.DOUYIN_COOKIE }}
+      DOUYIN_CONFIG: ${{ secrets.DOUYIN_CONFIG_BATCH1 }}
+      DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
+      DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
+      HEADLESS: "true"
+      BATCH_ID: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Write batch config
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # 手动触发时从输入参数获取配置
+            printf '%s' "$DOUYIN_CONFIG" > config.json
+          else
+            # 定时触发时使用预置的批量配置
+            cp config/batches/batch${{ matrix.batch }}.json config.json
+          fi
+      - name: Run batch ${{ matrix.batch }}
+        shell: bash
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            python run.py --dry-run
+          else
+            python run.py
+          fi
+      - name: Upload diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: douyin-failure-batch${{ matrix.batch }}-${{ github.run_id }}
+          path: artifacts/
+          retention-days: 3
+
+  send-batch2:
+    needs: send-batch1
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      DOUYIN_COOKIE: ${{ secrets.DOUYIN_COOKIE }}
+      DOUYIN_CONFIG: ${{ secrets.DOUYIN_CONFIG_BATCH2 }}
+      DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
+      DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
+      HEADLESS: "true"
+      BATCH_ID: "2"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Write batch config
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            printf '%s' "$DOUYIN_CONFIG" > config.json
+          else
+            cp config/batches/batch${{ matrix.batch }}.json config.json
+          fi
+      - name: Run batch ${{ matrix.batch }}
+        shell: bash
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            python run.py --dry-run
+          else
+            python run.py
+          fi
+      - name: Upload diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: douyin-failure-batch${{ matrix.batch }}-${{ github.run_id }}
+          path: artifacts/
+          retention-days: 3
+
+  send-batch3:
+    needs: send-batch2
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      DOUYIN_COOKIE: ${{ secrets.DOUYIN_COOKIE }}
+      DOUYIN_CONFIG: ${{ secrets.DOUYIN_CONFIG_BATCH3 }}
+      DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
+      DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
+      HEADLESS: "true"
+      BATCH_ID: "3"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Write batch config
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            printf '%s' "$DOUYIN_CONFIG" > config.json
+          else
+            cp config/batches/batch${{ matrix.batch }}.json config.json
+          fi
+      - name: Run batch ${{ matrix.batch }}
+        shell: bash
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            python run.py --dry-run
+          else
+            python run.py
+          fi
+      - name: Upload diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: douyin-failure-batch${{ matrix.batch }}-${{ github.run_id }}
+          path: artifacts/
+          retention-days: 3
