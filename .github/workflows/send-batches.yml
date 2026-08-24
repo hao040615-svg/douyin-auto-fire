@@ -19,8 +19,8 @@ on:
       timezone: "Asia/Shanghai"
 
 concurrency:
-  # 不同批次使用不同的并发组，互不干扰
-  group: ${{ github.workflow }}-batch-${{ job.id }}
+  # 所有批次共享同一并发组，确保串行执行
+  group: send-douyin-batches
   cancel-in-progress: false
 
 jobs:
