@@ -4,11 +4,11 @@ import random
 import secrets
 from urllib.parse import urlsplit
 
-from playwright.async_api import Page
+from playwright.async_api import Page, Locator
 
 from app.douyin import DouyinChat, PageOperationError, first_visible
 from app.models import Message, Sticker
-from app.selectors import IMAGE_INPUTS, MESSAGE_INPUTS, STICKER_BUTTONS, STICKER_PANELS
+from app.selectors import IMAGE_INPUTS, MESSAGE_INPUTS, STICKER_BUTTONS, STICKER_PANELS, STICKER_ITEM_SELECTORS
 
 
 SEND_BUTTONS = (
@@ -158,34 +158,98 @@ async def send_douyin_sticker(page: Page, sticker: Sticker) -> None:
                 await category.first.click()
 
         name = sticker.accessible_name or sticker.name
-        item = panel.locator('.emojiEmojiItememojiItem').filter(has_text=name)
-        for index in range(await item.count()):
-            candidate = item.nth(index)
-            description = candidate.locator('.emojiEmojiItememojiItemDesc')
-            if await description.count() and (await description.first.inner_text()).strip() == name:
-                await _click_and_confirm_sticker(page, candidate, before, name)
-                return
+        item = _find_sticker_item(panel, name)
+        if item is not None:
+            await _click_and_confirm_sticker(page, item, before, name)
+            return
 
-        candidates = (
-            panel.get_by_role("img", name=name, exact=True),
-            panel.get_by_role("button", name=name, exact=True),
-            panel.locator(f'[aria-label="{_css_escape(name)}"]'),
-            panel.locator(f'[title="{_css_escape(name)}"]'),
-            panel.locator(f'[alt="{_css_escape(name)}"]'),
-        )
-        for candidate in candidates:
-            if await candidate.count() and await candidate.first.is_visible():
-                await _click_and_confirm_sticker(page, candidate.first, before, name)
-                return
+        # 尝试点击面板内所有 button，找到匹配的（兜底策略）
+        fallback_item = _find_by_panel_search(panel, name)
+        if fallback_item is not None:
+            await _click_and_confirm_sticker(page, fallback_item, before, name)
+            return
 
         if sticker.fallback_index is not None:
             items = panel.locator('[role="button"], img, [aria-label], [title]')
             if await items.count() > sticker.fallback_index:
                 await _click_and_confirm_sticker(page, items.nth(sticker.fallback_index), before, name)
                 return
+
         raise PageOperationError(f"在抖音表情面板中找不到原生表情: {sticker.name}")
     finally:
         await _restore_composer(page)
+
+
+def _find_sticker_item(panel: Locator, name: str) -> Locator | None:
+    """多层探测查找表情项——抖音改版后自动适配。"""
+    # 策略1: 精确类名（原始方式）
+    try:
+        item = panel.locator('.emojiEmojiItem.emojiItem').filter(has_text=name)
+        if await item.count() and await item.first.is_visible():
+            return item.first
+    except Exception:
+        pass
+    try:
+        item = panel.locator('.emojiEmojiItememojiItem').filter(has_text=name)
+        if await item.count() and await item.first.is_visible():
+            return item.first
+    except Exception:
+        pass
+
+    # 策略2: 通用类名前缀匹配
+    for selector in ('[class*="emojiItem"]', '[class*="stickerItem"]', '[class*="EmojiItem"]', '[class*="StickerItem"]'):
+        try:
+            item = panel.locator(selector).filter(has_text=name)
+            if await item.count() and await item.first.is_visible():
+                return item.first
+        except Exception:
+            continue
+
+    # 策略3: 通过 aria-label / title / alt 精确匹配
+    for role_selector in (
+        panel.get_by_role("img", name=name, exact=True),
+        panel.get_by_role("button", name=name, exact=True),
+    ):
+        try:
+            if await role_selector.count() and await role_selector.first.is_visible():
+                return role_selector.first
+        except Exception:
+            continue
+
+    # 策略4: 遍历所有可见 button，匹配 text/aria-label/title
+    try:
+        buttons = panel.locator('button, [role="button"], [aria-label]')
+        for index in range(await buttons.count()):
+            candidate = buttons.nth(index)
+            text = (await candidate.inner_text()).strip()
+            aria = (await candidate.get_attribute("aria-label") or "").strip()
+            title = (await candidate.get_attribute("title") or "").strip()
+            alt = (await candidate.get_attribute("alt") or "").strip()
+            if text == name or aria == name or title == name or alt == name:
+                return candidate
+    except Exception:
+        pass
+
+    return None
+
+
+async def _find_by_panel_search(panel: Locator, name: str) -> Locator | None:
+    """面板兜底：遍历所有可交互元素，找名称匹配的项。"""
+    try:
+        # 尝试面板内的所有可见元素
+        candidates = panel.locator('[class*="emoji"], [class*="sticker"], button, [role="button"], img, [aria-label]')
+        for index in range(await candidates.count()):
+            candidate = candidates.nth(index)
+            if not await candidate.is_visible():
+                continue
+            text = (await candidate.inner_text()).strip()
+            aria = (await candidate.get_attribute("aria-label") or "").strip()
+            title = (await candidate.get_attribute("title") or "").strip()
+            if text == name or aria == name or title == name:
+                return candidate
+    except Exception:
+        pass
+    return None
 
 
 def _css_escape(value: str) -> str:
@@ -237,7 +301,7 @@ async def _confirm_sticker_sent(
     name: str,
     resource_key: str = "",
 ) -> None:
-    await _confirm_outgoing_message(page, before, f"原生表情“{name}”", resource_key=resource_key)
+    await _confirm_outgoing_message(page, before, f"原生表情\"{name}\"", resource_key=resource_key)
 
 
 async def _confirm_outgoing_message(
@@ -259,7 +323,7 @@ async def _confirm_outgoing_message(
                     content.innerHTML !== previousContent;
                 if (!isNewMessage) return false;
                 if (expectedText) {
-                    const normalize = value => (value || '').replace(/[\\s\\u200B\\u200C\\u200D\\uFEFF]+/g, ' ').trim();
+                    const normalize = value => (value || '').replace(/[\s\u200B\u200C\u200D\uFEFF]+/g, ' ').trim();
                     return normalize(content.innerText).includes(normalize(expectedText));
                 }
                 if (!expectedResource) return true;
