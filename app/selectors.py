@@ -46,10 +46,36 @@ STICKER_BUTTONS = (
     'button[aria-label*="表情"]',
     '[role="button"][aria-label*="表情"]',
     '[title*="表情"]',
+    'img[alt*="表情"]',
+    '[class*="stickerBtn"]',
+    '[class*="emojiBtn"]',
 )
 STICKER_PANELS = (
     '.componentsemojiemojiPanel',
     '[class*="emojiPanel"]',
+    '[class*="stickerPanel"]',
+    '[class*="emoji_panel"]',
     '[role="dialog"]',
     '[class*="sticker"]',
+    '[class*="EmojiPanel"]',
+    '[class*="StickerPanel"]',
+)
+
+# 动态探测：按顺序尝试这些选择器来查找表情列表项
+# 抖音改版后类名会变，所以用多层探测策略
+STICKER_ITEM_SELECTORS = (
+    # 标准类名组合（原始）
+    '.emojiEmojiItem.emojiItem',
+    '.emojiEmojiItememojiItem',
+    # 通用表情项选择器
+    '[class*="emojiItem"]',
+    '[class*="stickerItem"]',
+    '[class*="EmojiItem"]',
+    '[class*="StickerItem"]',
+    # 通过 role/button 查找
+    '[role="button"]',
+    'button',
+    # 通过 aria-label/data-testid 查找
+    '[aria-label]',
+    '[data-testid]',
 )
