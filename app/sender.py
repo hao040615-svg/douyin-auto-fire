@@ -158,13 +158,13 @@ async def send_douyin_sticker(page: Page, sticker: Sticker) -> None:
                 await category.first.click()
 
         name = sticker.accessible_name or sticker.name
-        item = _find_sticker_item(panel, name)
+        item = await _find_sticker_item(panel, name)
         if item is not None:
             await _click_and_confirm_sticker(page, item, before, name)
             return
 
-        # 尝试点击面板内所有 button，找到匹配的（兜底策略）
-        fallback_item = _find_by_panel_search(panel, name)
+        # 面板兜底：搜索框输入关键词
+        fallback_item = await _find_by_panel_search(panel, name)
         if fallback_item is not None:
             await _click_and_confirm_sticker(page, fallback_item, before, name)
             return
@@ -180,7 +180,7 @@ async def send_douyin_sticker(page: Page, sticker: Sticker) -> None:
         await _restore_composer(page)
 
 
-def _find_sticker_item(panel: Locator, name: str) -> Locator | None:
+async def _find_sticker_item(panel: Locator, name: str) -> Locator | None:
     """多层探测查找表情项——抖音改版后自动适配。"""
     # 策略1: 精确类名（原始方式）
     try:
