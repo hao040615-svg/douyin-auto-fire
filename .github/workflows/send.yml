@@ -35,7 +35,7 @@ jobs:
       - run: pip install -r requirements.txt
       - run: python -m playwright install --with-deps chromium
       - name: Write storage state to file
-        run: echo "$DOUYIN_STORAGE_STATE" > storage-state.json
+        run: printf "%s" "$DOUYIN_STORAGE_STATE" > storage-state.json
       - name: Run sender
         shell: bash
         run: |
