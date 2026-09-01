@@ -100,8 +100,6 @@ async def open_douyin(settings: Settings) -> AsyncIterator[BrowserSession]:
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/131.0.0.0 Safari/537.36"
             ),
-            "platform": "Win32",
-            "screen": {"width": 1440, "height": 900},
             "has_touch": False,
         }
         if settings.storage_state:
