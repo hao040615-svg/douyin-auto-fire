@@ -77,12 +77,33 @@ async def open_douyin(settings: Settings) -> AsyncIterator[BrowserSession]:
     context: BrowserContext | None = None
     try:
         playwright = await async_playwright().start()
-        launch_args = {"headless": settings.headless}
+        launch_args = {
+            "headless": settings.headless,
+            "args": [
+                "--disable-blink-features=AutomationControlled",
+                "--disable-dev-shm-usage",
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--window-size=1440,1000",
+            ],
+        }
         if settings.browser_path:
             launch_args["executable_path"] = settings.browser_path
         browser = await playwright.chromium.launch(**launch_args)
 
-        context_args = {"viewport": {"width": 1440, "height": 1000}, "locale": "zh-CN"}
+        context_args = {
+            "viewport": {"width": 1440, "height": 1000},
+            "locale": "zh-CN",
+            "timezone_id": "Asia/Shanghai",
+            "user_agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/131.0.0.0 Safari/537.36"
+            ),
+            "platform": "Win32",
+            "screen": {"width": 1440, "height": 900},
+            "has_touch": False,
+        }
         if settings.storage_state:
             state = parse_auth_json(settings.storage_state, "DOUYIN_STORAGE_STATE")
             if not isinstance(state, dict):
