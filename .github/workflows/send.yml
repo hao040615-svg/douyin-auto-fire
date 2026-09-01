@@ -27,6 +27,10 @@ jobs:
       DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
       DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
       HEADLESS: "true"
+      # 代理配置 - 请替换为可用的中国代理地址
+      HTTP_PROXY: ${{ secrets.DOUYIN_PROXY }}
+      HTTPS_PROXY: ${{ secrets.DOUYIN_PROXY }}
+      no_proxy: "localhost,127.0.0.1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
