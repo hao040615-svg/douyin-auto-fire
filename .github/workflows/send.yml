@@ -22,8 +22,8 @@ jobs:
     permissions:
       contents: read
     env:
-      DOUYIN_COOKIE: ${{ secrets.DOUYIN_COOKIE_ACCOUNT3 }}
-      DOUYIN_CONFIG: ${{ secrets.DOUYIN_CONFIG_ACCOUNT3 }}
+      DOUYIN_COOKIE: ${{ secrets.DOUYIN_COOKIE3 }}
+      DOUYIN_CONFIG: ${{ secrets.DOUYIN_CONFIG3 }}
       DOUYIN_STORAGE_STATE: ""
       HEADLESS: "true"
     steps:
