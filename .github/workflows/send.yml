@@ -42,10 +42,17 @@ jobs:
 
       - name: Write configuration
         shell: bash
-        run: printf '%s' "$DOUYIN_CONFIG" > config.json
+        run: |
+          echo "Writing config.json..."
+          echo "Config length: ${#DOUYIN_CONFIG}"
+          printf '%s' "$DOUYIN_CONFIG" > config.json
+          echo "Config written successfully"
+          ls -la config.json
+          head -c 200 config.json
+          echo ""
 
       - name: Validate configuration
-        run: python -m json.tool config.json > /dev/null
+        run: python -m json.tool config.json
 
       - name: Run
         shell: bash
