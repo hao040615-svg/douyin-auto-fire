@@ -44,6 +44,9 @@ jobs:
         shell: bash
         run: printf '%s' "$DOUYIN_CONFIG" > config.json
 
+      - name: Validate configuration
+        run: python -m json.tool config.json > /dev/null
+
       - name: Run
         shell: bash
         run: |
