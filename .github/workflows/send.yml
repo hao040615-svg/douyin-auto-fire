@@ -24,36 +24,19 @@ jobs:
     env:
       DOUYIN_COOKIE: ${{ secrets.DOUYIN_COOKIE3 }}
       DOUYIN_CONFIG: ${{ secrets.DOUYIN_CONFIG3 }}
-      DOUYIN_STORAGE_STATE: ""
+      DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
+      DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
       HEADLESS: "true"
     steps:
       - uses: actions/checkout@v4
-
-      - name: Delete storage-state.json to force cookie auth
-        run: rm -f storage-state.json
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
       - run: pip install -r requirements.txt
-
       - run: python -m playwright install --with-deps chromium
-
-      - name: Write configuration
+      - name: Write protected configuration
         shell: bash
-        run: |
-          echo "Writing config.json..."
-          echo "Config length: ${#DOUYIN_CONFIG}"
-          printf '%s' "$DOUYIN_CONFIG" > config.json
-          echo "Config written successfully"
-          ls -la config.json
-          head -c 200 config.json
-          echo ""
-
-      - name: Validate configuration
-        run: python -m json.tool config.json
-
+        run: printf '%s' "$DOUYIN_CONFIG" > config.json
       - name: Run
         shell: bash
         run: |
@@ -62,7 +45,6 @@ jobs:
           else
             python run.py
           fi
-
       - name: Upload diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
