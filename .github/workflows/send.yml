@@ -1,17 +1,18 @@
 name: Send Douyin Messages
 
 on:
-  workflow_dispatch:       # 支持手动触发
+  workflow_dispatch:
     inputs:
       dry_run:
+        description: Only verify login and friends without sending
         type: boolean
         default: false
-  schedule:                # 定时任务（北京时间每天 08:00）
-    - cron: '0 8 * * *'
-      timezone: 'Asia/Shanghai'
+  schedule:
+    - cron: "0 8 * * *"
+      timezone: "Asia/Shanghai"
 
 concurrency:
-  group: douyin-daily
+  group: douyin-daily-sender
   cancel-in-progress: false
 
 jobs:
@@ -21,32 +22,37 @@ jobs:
     permissions:
       contents: read
     env:
-      DOUYIN_STORAGE_STATE: ${{ secrets.DOUYIN_STORAGE_STATE }}
-      DOUYIN_COOKIE: ${{ secrets.DOUYIN_COOKIE }}
-      DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
-      DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
+      DOUYIN_COOKIE: ${{ secrets.DOUYIN_COOKIE_ACCOUNT3 }}
+      DOUYIN_CONFIG: ${{ secrets.DOUYIN_CONFIG_ACCOUNT3 }}
+      DOUYIN_STORAGE_STATE: ""
       HEADLESS: "true"
-      # 代理配置 - 请替换为可用的中国代理地址
-      HTTP_PROXY: ${{ secrets.DOUYIN_PROXY }}
-      HTTPS_PROXY: ${{ secrets.DOUYIN_PROXY }}
-      no_proxy: "localhost,127.0.0.1"
     steps:
       - uses: actions/checkout@v4
+
+      - name: Delete storage-state.json to force cookie auth
+        run: rm -f storage-state.json
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
       - run: pip install -r requirements.txt
+
       - run: python -m playwright install --with-deps chromium
-      - name: Write storage state to file
-        run: printf "%s" "$DOUYIN_STORAGE_STATE" > storage-state.json
-      - name: Run sender
+
+      - name: Write configuration
+        shell: bash
+        run: printf '%s' "$DOUYIN_CONFIG" > config.json
+
+      - name: Run
         shell: bash
         run: |
-          if [ "${{ inputs.dry_run }}" = "true" ]; then
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.dry_run }}" == "true" ]]; then
             python run.py --dry-run
           else
             python run.py
           fi
+
       - name: Upload diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
