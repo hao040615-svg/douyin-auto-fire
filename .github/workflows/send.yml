@@ -9,7 +9,7 @@ on:
         default: false
   # 每天北京时间 08:00 自动执行
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 8 * * *"
       timezone: "Asia/Shanghai"
 
 concurrency:
